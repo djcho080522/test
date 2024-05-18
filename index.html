@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minesweeper</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+        #minesweeper {
+            display: grid;
+            grid-template-columns: repeat(10, 30px);
+            gap: 2px;
+        }
+        .cell {
+            width: 30px;
+            height: 30px;
+            background-color: #b0c4de;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .cell.revealed {
+            background-color: #dcdcdc;
+            cursor: default;
+        }
+        .cell.mine {
+            background-color: red;
+        }
+    </style>
+</head>
+<body>
+    <div id="minesweeper"></div>
+
+    <script>
+        const rows = 10;
+        const cols = 10;
+        const minesCount = 20;
+        const board = [];
+        const minesweeper = document.getElementById('minesweeper');
+
+        function initBoard() {
+            for (let row = 0; row < rows; row++) {
+                const rowArray = [];
+                for (let col = 0; col < cols; col++) {
+                    const cell = {
+                        element: document.createElement('div'),
+                        hasMine: false,
+                        revealed: false,
+                        adjacentMines: 0
+                    };
+                    cell.element.classList.add('cell');
+                    cell.element.addEventListener('click', () => revealCell(row, col));
+                    minesweeper.appendChild(cell.element);
+                    rowArray.push(cell);
+                }
+                board.push(rowArray);
+            }
+            placeMines();
+            calculateAdjacentMines();
+        }
+
+        function placeMines() {
+            let placedMines = 0;
+            while (placedMines < minesCount) {
+                const row = Math.floor(Math.random() * rows);
+                const col = Math.floor(Math.random() * cols);
+                if (!board[row][col].hasMine) {
+                    board[row][col].hasMine = true;
+                    placedMines++;
+                }
+            }
+        }
+
+        function calculateAdjacentMines() {
+            const directions = [
+                { dx: -1, dy: -1 }, { dx: 0, dy: -1 }, { dx: 1, dy: -1 },
+                { dx: -1, dy: 0 },                      { dx: 1, dy: 0 },
+                { dx: -1, dy: 1 }, { dx: 0, dy: 1 }, { dx: 1, dy: 1 }
+            ];
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < cols; col++) {
+                    if (board[row][col].hasMine) continue;
+                    let count = 0;
+                    for (const direction of directions) {
+                        const newRow = row + direction.dy;
+                        const newCol = col + direction.dx;
+                        if (newRow >= 0 && newRow < rows && newCol >= 0 && newCol < cols) {
+                            if (board[newRow][newCol].hasMine) {
+                                count++;
+                            }
+                        }
+                    }
+                    board[row][col].adjacentMines = count;
+                }
+            }
+        }
+
+        function revealCell(row, col) {
+            const cell = board[row][col];
+            if (cell.revealed) return;
+
+            cell.revealed = true;
+            cell.element.classList.add('revealed');
+
+            if (cell.hasMine) {
+                cell.element.classList.add('mine');
+                alert('Game Over!');
+                revealAllMines();
+            } else {
+                cell.element.textContent = cell.adjacentMines === 0 ? '' : cell.adjacentMines;
+                if (cell.adjacentMines === 0) {
+                    revealAdjacentCells(row, col);
+                }
+            }
+        }
+
+        function revealAdjacentCells(row, col) {
+            const directions = [
+                { dx: -1, dy: -1 }, { dx: 0, dy: -1 }, { dx: 1, dy: -1 },
+                { dx: -1, dy: 0 },                      { dx: 1, dy: 0 },
+                { dx: -1, dy: 1 }, { dx: 0, dy: 1 }, { dx: 1, dy: 1 }
+            ];
+            for (const direction of directions) {
+                const newRow = row + direction.dy;
+                const newCol = col + direction.dx;
+                if (newRow >= 0 && newRow < rows && newCol >= 0 && newCol < cols) {
+                    revealCell(newRow, newCol);
+                }
+            }
+        }
+
+        function revealAllMines() {
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < cols; col++) {
+                    if (board[row][col].hasMine) {
+                        board[row][col].element.classList.add('mine');
+                        board[row][col].revealed = true;
+                    }
+                }
+            }
+        }
+
+        initBoard();
+    </script>
+</body>
+</html>
